@@ -1,0 +1,10 @@
+# Jupyter notebooks
+.ipynb_checkpoints/
+
+# Virtual env
+venv/
+
+# Logs and HTMLs
+*.log
+*.html
+
