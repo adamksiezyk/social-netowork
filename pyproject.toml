@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "social-network"
+version = "0.1.0"
+description = ""
+authors = ["Adam <adam.ksiezyk@gmail.com>"]
+readme = "README.md"
+packages = [{include = "social_network", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,3 +1,6 @@
+# Python
+*.pyc
+
 # Jupyter notebooks
 .ipynb_checkpoints/
 
