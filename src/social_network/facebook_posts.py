@@ -2,10 +2,13 @@ import datetime as dt
 import json
 from dataclasses import dataclass, field
 
-from social_network.utils import iterate, take_nth
-
-from .config import NEXT_FEED_TEXT, POST_URL_TEXT, tz
+from .config import NEXT_FEED_TEXT, POST_URL_TEXT, home_uri, tz
 from .facebook_scraper import create_url, fetch_html, get_first_child
+from .utils import iterate, take_nth
+
+
+def create_posts_uri(page_id: str) -> str:
+    return f"{home_uri}/{page_id}/?v=timeline"
 
 
 def get_posts_as_soups(soup):
@@ -34,8 +37,8 @@ def create_post_from_soup(post):
         return Post(
             timestamp=get_timestamp(post),
             content=get_content(post),
-            likes=get_likes(post),
-            comments=get_comments(post),
+            likes=get_number_of_likes(post),
+            comments=get_number_of_comments(post),
             url=get_url(post),
         )
     except:
@@ -43,7 +46,8 @@ def create_post_from_soup(post):
 
 
 def get_timestamp(post):
-    page_insights = list(json.loads(post.get("data-ft"))["page_insights"].values())[0]
+    page_insights = list(json.loads(post.get("data-ft"))
+                         ["page_insights"].values())[0]
     post_context = page_insights["post_context"]
     publish_time = post_context["publish_time"]
     return dt.datetime.fromtimestamp(publish_time).astimezone(tz)
@@ -54,12 +58,12 @@ def get_content(post):
     return " ".join(paragraph.stripped_strings)
 
 
-def get_likes(post):
+def get_number_of_likes(post):
     footer = list(post.children)[1]
     return int(footer.a.text)
 
 
-def get_comments(post):
+def get_number_of_comments(post):
     footer = list(post.children)[1]
     stats = list(footer.children)[1]
     comments_section = list(stats.children)[2]
@@ -77,8 +81,9 @@ def get_url(post):
     return post.find(string=POST_URL_TEXT).find_parent().get("href")
 
 
-def fetch_feed(s, url):
-    soup = fetch_html(s, url)
+def fetch_feed(s, page_id: str):
+    uri = create_posts_uri(page_id)
+    soup = fetch_html(s, uri)
     posts_soups = get_posts_as_soups(soup)
     posts = [create_post_from_soup(p) for p in posts_soups]
     yield from posts

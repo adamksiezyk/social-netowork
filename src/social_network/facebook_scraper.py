@@ -1,24 +1,21 @@
-import datetime as dt
-import json
 from contextlib import contextmanager
-from dataclasses import dataclass, field
 from functools import partial
 from typing import Iterable
 
 import requests
 from bs4 import BeautifulSoup
 
-from .config import NEXT_FEED_TEXT, POST_URL_TEXT, base_uri, home_url, proto, tz
+from .config import home_uri
 from .utils import take_nth
 
 
 # Scraper
 def create_url(path):
-    return f"{proto}://{base_uri}/{path.strip('/')}"
+    return f"{home_uri}/{path.strip('/')}"
 
 
 def _get_login_data() -> tuple[str, dict, dict]:
-    res = requests.get(home_url)
+    res = requests.get(home_uri)
     res.raise_for_status()
     soup = BeautifulSoup(res.text)
     form = soup.find(attrs={"id": "login_form"})
@@ -50,7 +47,7 @@ def create_session(email: str, password: str) -> Iterable[requests.Session]:
 def fetch_html(s, url):
     res = s.get(url)
     res.raise_for_status()
-    return BeautifulSoup(res.text)
+    return BeautifulSoup(res.text, features="html.parser")
 
 
 def get_nth_child(n, soup):

@@ -5,7 +5,8 @@ POST_URL_TEXT = "Pełne zdarzenie"
 NEXT_FRIENDS_TEXT = "Zobacz więcej znajomych"
 
 proto = "https"
-base_uri = "mbasic.facebook.com"
-home_url = f"{proto}://{base_uri}"
+base_url = "mbasic.facebook.com"
+home_uri = f"{proto}://{base_url}"
+friends_path = "friends"
 
 tz = dt.timezone(dt.timedelta(hours=2))
