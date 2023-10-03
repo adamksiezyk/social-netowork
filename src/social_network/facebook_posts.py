@@ -2,7 +2,7 @@ import datetime as dt
 import json
 from dataclasses import dataclass, field
 
-from .config import NEXT_FEED_TEXT, POST_URL_TEXT, home_uri, tz
+from .config import NEXT_FEED_TEXT, POST_URL_TEXT, home_uri
 from .facebook_scraper import create_url, fetch_html, get_first_child
 from .utils import iterate, take_nth
 
@@ -50,7 +50,7 @@ def get_timestamp(post):
                          ["page_insights"].values())[0]
     post_context = page_insights["post_context"]
     publish_time = post_context["publish_time"]
-    return dt.datetime.fromtimestamp(publish_time).astimezone(tz)
+    return dt.datetime.fromtimestamp(publish_time)
 
 
 def get_content(post):

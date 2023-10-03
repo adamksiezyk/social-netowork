@@ -8,5 +8,3 @@ proto = "https"
 base_url = "mbasic.facebook.com"
 home_uri = f"{proto}://{base_url}"
 friends_path = "friends"
-
-tz = dt.timezone(dt.timedelta(hours=2))
