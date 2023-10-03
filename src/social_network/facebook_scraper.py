@@ -17,7 +17,7 @@ def create_url(path):
 def _get_login_data() -> tuple[str, dict, dict]:
     res = requests.get(home_uri)
     res.raise_for_status()
-    soup = BeautifulSoup(res.text)
+    soup = BeautifulSoup(res.text, features="html.parser")
     form = soup.find(attrs={"id": "login_form"})
     action_url: str = form.get("action")
     inputs = form.find_all("input", attrs={"type": ["hidden", "submit"]})
