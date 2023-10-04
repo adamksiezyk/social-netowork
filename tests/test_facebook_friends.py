@@ -3,19 +3,18 @@ import os
 from social_network.facebook_friends import fetch_friends
 from social_network.facebook_scraper import create_session
 
-MY_PROFILE_URL = "https://mbasic.facebook.com/adam.ksiezyk.5/friends"
+USER_ID = "adam.ksiezyk.5"
 
 
-def test_scraper():
+def test_facebook_friends():
     email = os.environ["FB_EMAIL"]
     password = os.environ["FB_PASSWORD"]
 
     with create_session(email, password) as s:
-        url = MY_PROFILE_URL
-        friends = fetch_friends(s, url)
+        friends = fetch_friends(s, USER_ID)
         for friend in friends:
             print(friend)
 
 
 if __name__ == "__main__":
-    test_scraper()
+    test_facebook_friends()

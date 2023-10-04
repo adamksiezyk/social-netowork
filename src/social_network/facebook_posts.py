@@ -1,6 +1,7 @@
 import datetime as dt
 import json
 from dataclasses import dataclass, field
+from urllib.parse import parse_qs, urlparse
 
 from .config import NEXT_FEED_TEXT, POST_URL_TEXT, home_uri
 from .facebook_scraper import create_url, fetch_html, get_first_child
@@ -27,6 +28,11 @@ def get_next_posts_url(soup):
 class Post:
     timestamp: dt.datetime
     content: str
+    hashtags: list[str]
+    profiles: list[str]
+    pages: list[str]
+    photos: list[str]
+    videos: list[str]
     likes: int
     comments: int
     url: str = field(repr=False)
@@ -34,14 +40,21 @@ class Post:
 
 def create_post_from_soup(post):
     try:
+        content, hashtags, profiles, pages, photos, videos = parse_content(post)
         return Post(
             timestamp=get_timestamp(post),
-            content=get_content(post),
+            content=content,
+            hashtags=hashtags,
+            profiles=profiles,
+            pages=pages,
+            photos=photos,
+            videos=videos,
             likes=get_number_of_likes(post),
             comments=get_number_of_comments(post),
             url=get_url(post),
         )
-    except:
+    except Exception as e:
+        print(e)
         return None
 
 
@@ -53,9 +66,38 @@ def get_timestamp(post):
     return dt.datetime.fromtimestamp(publish_time)
 
 
-def get_content(post):
+def parse_content(post):
     paragraph = post.find("p")
-    return " ".join(paragraph.stripped_strings)
+    content = " ".join(paragraph.stripped_strings)
+
+    hashtags = []
+    profiles = []
+    pages = []
+    photos = []
+    videos = []
+    for a in paragraph.findAll("a"):
+        href = a.get("href")
+        if href.startswith("/hashtag"):
+            url = urlparse(href)
+            value = url.path.split("/")[-1]
+            hashtags.append(value)
+        elif href.startswith("/profile.php"):
+            url = urlparse(href)
+            value = parse_qs(url.query)['id']
+            profiles.append(value)
+        elif href.startswith("/photo.php"):
+            url = urlparse(href)
+            value = parse_qs(url.query)['fbid']
+            photos.append(value)
+        elif href.startswith("/video_redirect"):
+            url = urlparse(href)
+            value = parse_qs(url.query)['src']
+            videos.append(value)
+        else:
+            url = urlparse(href)
+            value = url.path.strip('/')
+            pages.append(value)
+    return content, hashtags, profiles, pages, photos, videos
 
 
 def get_number_of_likes(post):
