@@ -67,36 +67,41 @@ def get_timestamp(post):
 
 
 def parse_content(post):
-    paragraph = post.find("p")
-    content = " ".join(paragraph.stripped_strings)
+    p = post.find("p")
+    paragraphs = [p, *p.find_next_siblings("p")]
 
+    content = []
     hashtags = []
     profiles = []
     pages = []
     photos = []
     videos = []
-    for a in paragraph.findAll("a"):
-        href = a.get("href")
-        if href.startswith("/hashtag"):
-            url = urlparse(href)
-            value = url.path.split("/")[-1]
-            hashtags.append(value)
-        elif href.startswith("/profile.php"):
-            url = urlparse(href)
-            value = parse_qs(url.query)['id']
-            profiles.append(value)
-        elif href.startswith("/photo.php"):
-            url = urlparse(href)
-            value = parse_qs(url.query)['fbid']
-            photos.append(value)
-        elif href.startswith("/video_redirect"):
-            url = urlparse(href)
-            value = parse_qs(url.query)['src']
-            videos.append(value)
-        else:
-            url = urlparse(href)
-            value = url.path.strip('/')
-            pages.append(value)
+    for p in paragraphs:
+        content += p.stripped_strings
+        for a in p.findAll("a"):
+            href = a.get("href")
+            if href.startswith("/hashtag"):
+                url = urlparse(href)
+                value = url.path.split("/")[-1]
+                hashtags.append(value)
+            elif href.startswith("/profile.php"):
+                url = urlparse(href)
+                value = parse_qs(url.query)['id']
+                profiles.append(value)
+            elif href.startswith("/photo.php"):
+                url = urlparse(href)
+                value = parse_qs(url.query)['fbid']
+                photos.append(value)
+            elif href.startswith("/video_redirect"):
+                url = urlparse(href)
+                value = parse_qs(url.query)['src']
+                videos.append(value)
+            else:
+                url = urlparse(href)
+                value = url.path.strip('/')
+                pages.append(value)
+
+    content = " ".join(content)
     return content, hashtags, profiles, pages, photos, videos
 
 
