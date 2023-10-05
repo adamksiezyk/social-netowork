@@ -5,7 +5,7 @@ from typing import Iterable
 import requests
 from bs4 import BeautifulSoup
 
-from .config import home_uri
+from .config import USER_AGENT, home_uri
 from .utils import take_nth
 
 
@@ -45,7 +45,8 @@ def create_session(email: str, password: str) -> Iterable[requests.Session]:
 
 
 def fetch_html(s, url):
-    res = s.get(url)
+    headers = {'User-Agent': USER_AGENT}
+    res = s.get(url, headers=headers)
     res.raise_for_status()
     return BeautifulSoup(res.text, features="html.parser")
 
