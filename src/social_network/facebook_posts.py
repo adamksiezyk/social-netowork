@@ -3,13 +3,13 @@ import json
 from dataclasses import dataclass, field
 from urllib.parse import parse_qs, urlparse
 
-from .config import NEXT_FEED_TEXT, POST_URL_TEXT, home_uri
+from .config import NEXT_FEED_TEXT, POST_URL_TEXT, HOME_URI
 from .facebook_scraper import create_url, fetch_html, get_first_child
 from .utils import iterate, take_nth
 
 
 def create_posts_uri(page_id: str) -> str:
-    return f"{home_uri}/{page_id}/?v=timeline"
+    return f"{HOME_URI}/{page_id}/?v=timeline"
 
 
 def get_posts_as_soups(soup):

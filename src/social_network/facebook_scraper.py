@@ -5,17 +5,17 @@ from typing import Iterable
 import requests
 from bs4 import BeautifulSoup
 
-from .config import USER_AGENT, home_uri
+from .config import HOME_URI, USER_AGENT
 from .utils import take_nth
 
 
 # Scraper
 def create_url(path):
-    return f"{home_uri}/{path.strip('/')}"
+    return f"{HOME_URI}/{path.strip('/')}"
 
 
 def _get_login_data() -> tuple[str, dict, dict]:
-    res = requests.get(home_uri)
+    res = requests.get(HOME_URI)
     res.raise_for_status()
     soup = BeautifulSoup(res.text, features="html.parser")
     form = soup.find(attrs={"id": "login_form"})

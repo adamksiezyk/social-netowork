@@ -2,12 +2,12 @@ import time
 from dataclasses import dataclass, field
 from typing import Optional
 
-from social_network.config import NEXT_FRIENDS_TEXT, friends_path, home_uri
+from social_network.config import FRIENDS_PATH, HOME_URI, NEXT_FRIENDS_TEXT
 from social_network.facebook_scraper import create_url, fetch_html
 
 
 def create_friends_url(user_id: str) -> str:
-    return f"{home_uri}/{user_id}/{friends_path}"
+    return f"{HOME_URI}/{user_id}/{FRIENDS_PATH}"
 
 
 def get_friends_as_soups(soup):
