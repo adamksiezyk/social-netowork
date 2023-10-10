@@ -111,11 +111,6 @@ def _get_post_uri(post):
     return post.find(string=POST_URL_TEXT).find_parent().get("href")
 
 
-def expand_post(uri):
-    soup = fetch_html(None, uri)
-    return soup.find(id="m_story_permalink_view")
-
-
 def parse_content(s: Session, uri: str):
     post = fetch_html(s, uri).find(id="m_story_permalink_view")
 
