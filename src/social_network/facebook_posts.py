@@ -1,8 +1,7 @@
 import datetime as dt
 import json
 from dataclasses import dataclass, field
-from functools import partial
-from typing import Callable, Iterable, Optional
+from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
 from requests import Session
@@ -24,9 +23,6 @@ class Post:
     likes: int
     comments: int
     url: str = field(repr=False)
-
-
-PostFactory = Callable[[Session], Optional[Post]]
 
 
 def fetch_feed(s: Session, page_id: str):
