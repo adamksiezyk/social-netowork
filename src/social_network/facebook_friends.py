@@ -1,6 +1,8 @@
-import time
+import asyncio
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import AsyncIterator, Optional
+
+import httpx
 
 from social_network.config import FRIENDS_PATH, HOME_URI, NEXT_FRIENDS_TEXT
 from social_network.facebook_scraper import create_url, fetch_html
@@ -65,14 +67,14 @@ def get_num_common_friends(soup):
         return None
 
 
-def fetch_friends(s, user_id: str):
-    url = create_friends_url(user_id)
-    soup = fetch_html(s, url)
+async def fetch_friends(s: httpx.AsyncClient, uri: str) -> AsyncIterator[Friend]:
+    soup = await fetch_html(s, uri)
     friends_soups = get_friends_as_soups(soup)
-    friends = [create_friend_from_soup(p) for p in friends_soups]
-    yield from friends
+    for f in friends_soups:
+        yield create_friend_from_soup(f)
 
-    time.sleep(2)
+    await asyncio.sleep(0.1)
     next_url = get_next_friends_url(soup)
     if next_url is not None:
-        yield from fetch_friends(s, next_url)
+        async for f in fetch_friends(s, next_url):
+            yield f

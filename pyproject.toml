@@ -10,6 +10,7 @@ packages = [{include = "social_network", from = "src"}]
 python = "^3.10"
 requests = "^2.31.0"
 bs4 = "^0.0.1"
+httpx = "^0.25.0"
 
 
 [build-system]

@@ -1,10 +1,10 @@
 import datetime as dt
 import json
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import AsyncIterator, Optional
 from urllib.parse import parse_qs, urlparse
 
-from requests import Session
+import httpx
 
 from .config import HOME_URI, NEXT_FEED_TEXT, POST_URL_TEXT
 from .facebook_scraper import create_url, fetch_html, get_first_child
@@ -25,16 +25,17 @@ class Post:
     url: str = field(repr=False)
 
 
-def fetch_feed(s: Session, page_id: str):
+async def fetch_feed(s: httpx.AsyncClient, page_id: str) -> AsyncIterator[Post | None]:
     uri = _create_feed_uri(page_id)
-    soup = fetch_html(s, uri)
+    soup = await fetch_html(s, uri)
     posts_soups = soup.find(attrs={"class": "feed"}).find().children
     for p in posts_soups:
-        yield create_post_from_soup(p, s)
+        yield await create_post_from_soup(p, s)
 
     next_uri = _get_next_feed_stream_uri(soup)
     if next_uri is not None:
-        yield from _fetch_feed_stream(s, next_uri)
+        async for p in _fetch_feed_stream(s, next_uri):
+            yield p
 
 
 def _create_feed_uri(page_id: str) -> str:
@@ -49,22 +50,23 @@ def _get_next_feed_stream_uri(soup):
     return create_url(next_posts_url)
 
 
-def _fetch_feed_stream(s, url):
-    soup = fetch_html(s, url)
+async def _fetch_feed_stream(s, url) -> AsyncIterator[Post | None]:
+    soup = await fetch_html(s, url)
     contrainer = iterate(get_first_child, soup.find_all("table")[1])
     posts_soups = take_nth(5, contrainer).children
     for p in posts_soups:
-        yield create_post_from_soup(p, s)
+        yield await create_post_from_soup(p, s)
 
     next_url = _get_next_feed_stream_uri(soup)
     if next_url is not None:
-        yield from _fetch_feed_stream(s, next_url)
+        async for p in _fetch_feed_stream(s, next_url):
+            yield p
 
 
-def create_post_from_soup(post, s: Session) -> Optional[Post]:
+async def create_post_from_soup(post, s: httpx.AsyncClient) -> Optional[Post]:
     try:
         uri = create_url(_get_post_uri(post))
-        content, hashtags, profiles, pages, photos, videos = parse_content(s, uri)
+        content, hashtags, profiles, pages, photos, videos = await parse_content(s, uri)
         return Post(
             timestamp=_get_timestamp(post),
             content=content,
@@ -111,8 +113,9 @@ def _get_post_uri(post):
     return post.find(string=POST_URL_TEXT).find_parent().get("href")
 
 
-def parse_content(s: Session, uri: str):
-    post = fetch_html(s, uri).find(id="m_story_permalink_view")
+async def parse_content(s: httpx.AsyncClient, uri: str):
+    soup = await fetch_html(s, uri)
+    post = soup.find(id="m_story_permalink_view")
 
     content = []
     hashtags = []

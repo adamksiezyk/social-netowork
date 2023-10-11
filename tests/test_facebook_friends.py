@@ -1,20 +1,22 @@
+import asyncio
 import os
 
-from social_network.facebook_friends import fetch_friends
+from social_network.facebook_friends import create_friends_url, fetch_friends
 from social_network.facebook_scraper import create_session
 
 USER_ID = "adam.ksiezyk.5"
 
 
-def test_facebook_friends():
+async def test_facebook_friends():
     email = os.environ["FB_EMAIL"]
     password = os.environ["FB_PASSWORD"]
+    uri = create_friends_url(USER_ID)
 
-    with create_session(email, password) as s:
-        friends = fetch_friends(s, USER_ID)
-        for friend in friends:
+    async with create_session(email, password) as s:
+        friends = fetch_friends(s, uri)
+        async for friend in friends:
             print(friend)
 
 
 if __name__ == "__main__":
-    test_facebook_friends()
+    asyncio.run(test_facebook_friends())
