@@ -4,7 +4,7 @@ import os
 
 import httpx
 
-from social_network.facebook_posts import Post, create_post_from_soup, fetch_feed, fetch_feed_generator
+from social_network.facebook_posts import Post, create_post_from_soup, fetch_feed_generator
 from social_network.facebook_scraper import create_session
 
 logger = logging.getLogger(__name__)
