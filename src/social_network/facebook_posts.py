@@ -25,17 +25,21 @@ class Post:
     url: str = field(repr=False)
 
 
-async def fetch_feed(s: httpx.AsyncClient, page_id: str) -> AsyncIterator[Post | None]:
+async def fetch_feed_generator(s: httpx.AsyncClient, page_id: str):
     uri = _create_feed_uri(page_id)
     soup = await fetch_html(s, uri)
     posts_soups = soup.find(attrs={"class": "feed"}).find().children
-    for p in posts_soups:
-        yield await create_post_from_soup(p, s)
-
-    next_uri = _get_next_feed_stream_uri(soup)
-    if next_uri is not None:
-        async for p in _fetch_feed_stream(s, next_uri):
+    while True:
+        for p in posts_soups:
             yield p
+
+        next_uri = _get_next_feed_stream_uri(soup)
+        if next_uri is None:
+            break
+        soup = await fetch_html(s, next_uri)
+        table = soup.find_all("table")[1]
+        contrainer = iterate(get_first_child, table)
+        posts_soups = take_nth(5, contrainer).children
 
 
 def _create_feed_uri(page_id: str) -> str:
@@ -48,19 +52,6 @@ def _get_next_feed_stream_uri(soup):
         return None
     next_posts_url = el.find_parent().find_parent().get("href")
     return create_url(next_posts_url)
-
-
-async def _fetch_feed_stream(s, url) -> AsyncIterator[Post | None]:
-    soup = await fetch_html(s, url)
-    contrainer = iterate(get_first_child, soup.find_all("table")[1])
-    posts_soups = take_nth(5, contrainer).children
-    for p in posts_soups:
-        yield await create_post_from_soup(p, s)
-
-    next_url = _get_next_feed_stream_uri(soup)
-    if next_url is not None:
-        async for p in _fetch_feed_stream(s, next_url):
-            yield p
 
 
 async def create_post_from_soup(post, s: httpx.AsyncClient) -> Optional[Post]:
