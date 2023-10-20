@@ -1,7 +1,7 @@
 import datetime as dt
 import json
 from dataclasses import dataclass, field
-from typing import AsyncIterator, Optional
+from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
 import httpx
@@ -13,7 +13,7 @@ from .utils import iterate, take_nth
 
 @dataclass
 class Post:
-    timestamp: dt.datetime
+    timestamp: str
     content: str
     hashtags: list[str]
     profiles: list[str]
@@ -54,12 +54,12 @@ def _get_next_feed_stream_uri(soup):
     return create_url(next_posts_url)
 
 
-async def create_post_from_soup(post, s: httpx.AsyncClient) -> Optional[Post]:
+async def create_post_from_soup(s: httpx.AsyncClient, post) -> Optional[Post]:
     try:
         uri = create_url(_get_post_uri(post))
         content, hashtags, profiles, pages, photos, videos = await parse_content(s, uri)
         return Post(
-            timestamp=_get_timestamp(post),
+            timestamp=get_timestamp(post).isoformat(),
             content=content,
             hashtags=hashtags,
             profiles=profiles,
@@ -74,7 +74,7 @@ async def create_post_from_soup(post, s: httpx.AsyncClient) -> Optional[Post]:
         return None
 
 
-def _get_timestamp(post):
+def get_timestamp(post):
     page_insights = list(json.loads(post.get("data-ft"))["page_insights"].values())[0]
     post_context = page_insights["post_context"]
     publish_time = post_context["publish_time"]
