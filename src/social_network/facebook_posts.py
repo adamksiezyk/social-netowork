@@ -1,5 +1,6 @@
 import datetime as dt
 import json
+import logging
 from dataclasses import dataclass, field
 from typing import Optional
 from urllib.parse import parse_qs, urlparse
@@ -9,6 +10,8 @@ import httpx
 from .config import HOME_URI, NEXT_FEED_TEXT, POST_URL_TEXT
 from .facebook_scraper import create_url, fetch_html, get_first_child
 from .utils import iterate, take_nth
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -28,7 +31,12 @@ class Post:
 async def fetch_feed_generator(s: httpx.AsyncClient, page_id: str):
     uri = _create_feed_uri(page_id)
     soup = await fetch_html(s, uri)
-    posts_soups = soup.find(attrs={"class": "feed"}).find().children
+    try:
+        posts_soups = soup.find(attrs={"class": "feed"}).find().children
+    except AttributeError:
+        logger.error("Could not parse feed")
+        return
+
     while True:
         for p in posts_soups:
             yield p
@@ -57,7 +65,12 @@ def _get_next_feed_stream_uri(soup):
 async def create_post_from_soup(s: httpx.AsyncClient, post) -> Optional[Post]:
     try:
         uri = create_url(_get_post_uri(post))
-        content, hashtags, profiles, pages, photos, videos = await parse_content(s, uri)
+        content_container = await parse_content(s, uri)
+        if content_container is None:
+            logger.error("Could not parse post")
+            return None
+
+        content, hashtags, profiles, pages, photos, videos = content_container
         return Post(
             timestamp=get_timestamp(post).isoformat(),
             content=content,
@@ -106,7 +119,12 @@ def _get_post_uri(post):
 
 async def parse_content(s: httpx.AsyncClient, uri: str):
     soup = await fetch_html(s, uri)
-    post = soup.find(id="m_story_permalink_view")
+    full_post_url = "m_story_permalink_view"
+    post = soup.find(id=full_post_url)
+
+    if post is None:
+        logger.error("Could not find {full_post_url!r} in post")
+        return None
 
     content = []
     hashtags = []
@@ -116,8 +134,8 @@ async def parse_content(s: httpx.AsyncClient, uri: str):
     videos = []
 
     p = post.find("p")
-    if not p:
-        return " ".join(content), hashtags, profiles, pages, photos, videos
+    if p is None or isinstance(p, int):
+        return None
 
     paragraphs = [p, *p.find_next_siblings("p")]
     for p in paragraphs:
